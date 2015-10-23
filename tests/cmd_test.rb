@@ -90,9 +90,20 @@ unless tests.empty?
 		qty = String(qty) + " " + ( qty > 1 ? "tests" : "test")
 		puts " * #{qty} to run"
 
-		tests_threads = []
-		tests.each { |test_script| tests_threads << Thread.new {require_relative File.join(test_dir, test_script)} }
-		tests_threads.each { |thr| thr.join }
+		tests.each { |test_script| require_relative File.join(test_dir, test_script) }
+
+		require 'benchmark'
+
+		Benchmark.bmbm do |b|
+			b.report("Sequential testing") do
+				tests.each { |test_script| require_relative File.join(test_dir, test_script) }
+			end
+			b.report("Threaded testing") do
+				tests_threads = []
+				tests.each { |test_script| tests_threads << Thread.new {require_relative File.join(test_dir, test_script)} }
+				tests_threads.each { |thr| thr.join }
+			end
+		end
 	end
 
 	Process.wait
